@@ -13,7 +13,7 @@ type Props = {
 }
 
 export const Modal = ({ isOpen, setIsOpen }: Props) => {
-	const { data } = useQuery({
+	const { data, isLoading } = useQuery({
 		queryKey: ['filters'],
 		queryFn: getFilters
 	})
@@ -24,22 +24,22 @@ export const Modal = ({ isOpen, setIsOpen }: Props) => {
 	const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false)
 
 	useEffect(() => {
-		setLocalFilters(JSON.parse(JSON.stringify(filters)))
+		setLocalFilters(structuredClone(filters))
 	}, [filters])
 
-	const isChanged = Object.keys(localFilters).some(key => {
-		const local = localFilters[key] || []
-		const global = filters[key] || []
-
-		if (local.length !== global.length) {
-			return true
-		}
-
-		return local.some(id => !global.includes(id))
-	})
+	const isChanged = JSON.stringify(localFilters) !== JSON.stringify(filters)
 
 	if (!isOpen) {
 		return null
+	}
+	if (isLoading) {
+		return (
+			<div className="fixed inset-0 flex items-center justify-center bg-black/20 backdrop-blur-md">
+				<div className="bg-white p-6 rounded-2xl shadow-xl">
+					{t('loading', 'Loading filters...')}
+				</div>
+			</div>
+		)
 	}
 	return (
 		<>
@@ -72,6 +72,7 @@ export const Modal = ({ isOpen, setIsOpen }: Props) => {
 										>
 											<input
 												key={option.id}
+												id={option.id}
 												type="checkbox"
 												checked={
 													localFilters[section.id]?.includes(option.id) || false
